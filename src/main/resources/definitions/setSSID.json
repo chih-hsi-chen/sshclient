@@ -1,0 +1,11 @@
+{
+    "type": "object",
+    "required": [ "ssid" ],
+    "properties": {
+        "ssid": {
+            "type": "string",
+            "description": "AP SSID",
+            "example": "dlink-1"
+        }
+    }
+}

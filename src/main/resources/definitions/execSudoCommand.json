@@ -1,0 +1,11 @@
+{
+    "type": "object",
+    "required": [ "scommand" ],
+    "properties": {
+        "scommand": {
+            "type": "string",
+            "description": "privileged command",
+            "example": "ovs-vsctl show"
+        }
+    }
+}

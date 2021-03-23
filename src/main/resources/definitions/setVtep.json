@@ -1,0 +1,21 @@
+{
+    "type": "object",
+    "required": [ "vnid", "ip" ],
+    "properties": {
+        "vnid": {
+            "type": "string",
+            "description": "VXLAN Network ID",
+            "example": "2000"
+        },
+        "ip": {
+            "type": "string",
+            "description": "VTEP IP address",
+            "example": "10.0.0.1"
+        },
+        "mac": {
+            "type": "string",
+            "description": "VTEP MAC address",
+            "example": "ab:cd:ef:01:23:45"
+        }
+    }
+}
