@@ -1,7 +1,6 @@
 package nctu.winlab.sshrest;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.FileWriter;
@@ -13,7 +12,6 @@ import java.util.stream.Stream;
 
 public class DXS5000Client extends SshShellClient implements SwitchClient, VxlanSwitch {
     private static Logger log = Logger.getLogger(DXS5000Client.class.getName());
-    private static ObjectMapper mapper = new ObjectMapper();
 
     public DXS5000Client(String ip, String port, String username, String password, String model) {
         super(ip, port, username, password);
