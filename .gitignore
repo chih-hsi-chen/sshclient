@@ -1,4 +1,5 @@
-target/*
-.vscode/*
+.vscode/
 .classpath
-.settings/*
+.settings/
+# maven build directory
+target/
