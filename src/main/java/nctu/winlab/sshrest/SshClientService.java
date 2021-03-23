@@ -32,15 +32,16 @@ public interface SshClientService {
      * @param deviceID switch name; if given "ALL", then represent all switches
      * @param ip IPv4 address of controller
      * @param port port of controller
+     * @return JSON object included fields: error, msg, array list of device msg
      */
-    public void setController(String deviceID, String ip, String port);
+    public ObjectNode setController(String deviceID, String ip, String port);
     /**
      * Remove controller from switch
      * 
      * @param deviceID switch name; if given "ALL", then represent all switches
      * @param ip IPv4 address of controller
      */
-    public void unsetController(String deviceID, String ip);
+    public ObjectNode unsetController(String deviceID, String ip);
     /**
      * Get installed flow rules of switch
      * 
@@ -90,7 +91,7 @@ public interface SshClientService {
      * @param deviceID switch name; if given "ALL", then represent all switches
      * @param loopbackId loopback ID
      */
-    public void setVxlanSourceInterfaceLoopback(String deviceID, String loopbackId);
+    public ObjectNode setVxlanSourceInterfaceLoopback(String deviceID, String loopbackId);
     /**
      * Binding VLAN ID to VXLAN VNI
      * 
@@ -98,7 +99,7 @@ public interface SshClientService {
      * @param vnid VXLAN Network Identifier (VNI)
      * @param vid VLAN ID (VID)
      */
-    public void setVxlanVlan(String deviceID, String vnid, String vid);
+    public ObjectNode setVxlanVlan(String deviceID, String vnid, String vid);
     /**
      * Set VTEP IP and MAC for a specified VNI
      * 
@@ -107,5 +108,8 @@ public interface SshClientService {
      * @param ip IPv4 address of VTEP
      * @param mac MAC address of VTEP
      */
-    public void setVxlanVtep(String deviceID, String vnid, String ip, String mac);
+    public ObjectNode setVxlanVtep(String deviceID, String vnid, String ip, String mac);
+    public ObjectNode setVxlanStatus(String deviceID, boolean flag);
+    public ObjectNode showVxlan(String deviceID);
+    public int[] getWidth();
 }

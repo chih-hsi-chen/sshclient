@@ -11,7 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-public class DXS5000Client extends SshShellClient implements SwitchClient {
+public class DXS5000Client extends SshShellClient implements SwitchClient, VxlanSwitch {
     private static Logger log = Logger.getLogger(DXS5000Client.class.getName());
     private static ObjectMapper mapper = new ObjectMapper();
 
@@ -22,85 +22,99 @@ public class DXS5000Client extends SshShellClient implements SwitchClient {
 
     @Override
     public ObjectNode getController() {
-        ObjectNode res = mapper.createObjectNode();
+        ObjectNode res = SwitchClient.createGeneralReply();
         ArrayNode controllerList = res.putArray("controllers");
+        String rawoutput = "";
         try {
             String[] reply = commander.addCmd("enable").addMainCmd("show openflow configured controller", new String[0]).addCmd("exit").sendCmd().recvCmd().split("[\r\n]+");
-            log.info(formatString("\u001b[32m\u001b[1m\n%s -- %s\n\u001b[0m", ip, model));
             String[] controllers = Arrays.copyOfRange(reply, 3, reply.length);
-            log.info(formatString("%-17s%-7s%-6s%s\n", "IP", "Port", "Mode", "Role"));
+
+            rawoutput += String.format("\u001b[32m\u001b[1m\n%s -- %s\n\u001b[0m", ip, model);
+            rawoutput += String.format("%-17s%-7s%-6s%s\n", "IP", "Port", "Mode", "Role");
             for (String controller : controllers) {
                 String[] infos = (String[])Stream.of(controller.split("[ \t]+")).filter(i -> !i.isEmpty()).toArray(x$0 -> new String[x$0]);
                 ObjectNode c = mapper.createObjectNode();
-                log.info(formatString("%-17s%-7s%-6s%s\n", infos[0], infos[1], infos[2], infos[3]));
+                rawoutput += String.format("%-17s%-7s%-6s%s\n", infos[0], infos[1], infos[2], infos[3]);
                 c.put("ip", infos[0]);
                 c.put("port", infos[1]);
                 c.put("mode", infos[2]);
                 c.put("role", infos[3]);
-                controllerList.add((JsonNode)c);
+                controllerList.add((JsonNode) c);
             }
+            res.put("raw", rawoutput);
         }
-        catch (Exception reply) {
-            // empty catch block
+        catch (Exception e) {
+            res.put("error", true);
+            res.put("msg", e.getMessage());
         }
         return res;
     }
 
     @Override
-    public void setController(String ip, String port) {
+    public ObjectNode setController(String ip, String port) {
+        ObjectNode res = SwitchClient.createGeneralReply();
+        String proto = "tcp";
         try {
-            String reply = commander.addCmd("enable", "configure").addMainCmd("openflow controller " + ip + " " + port).addCmd("exit", "exit").sendCmd().recvCmd();
-            log.info(reply);
+            String reply = commander.addCmd("enable", "configure").addMainCmd("openflow controller " + ip + " " + port + " " + proto).addCmd("exit", "exit").sendCmd().recvCmd();
+            res.put("raw", reply);
         }
         catch (Exception e) {
-            return;
+            res.put("error", true);
+            res.put("msg", e.getMessage());
         }
+        return res;
     }
 
     @Override
-    public void unsetController(String ip) {
+    public ObjectNode unsetController(String ip) {
+        ObjectNode res = SwitchClient.createGeneralReply();
         try {
             String reply = commander.addCmd("enable", "configure").addMainCmd("no openflow controller " + ip).addCmd("exit", "exit").sendCmd().recvCmd();
-            log.info(reply);
+            res.put("raw", reply);
         }
         catch (Exception e) {
-            return;
+            res.put("error", true);
+            res.put("msg", e.getMessage());
         }
+        return res;
     }
 
     @Override
     public ObjectNode getFlows() {
-        ObjectNode res = mapper.createObjectNode();
+        ObjectNode res = SwitchClient.createGeneralReply();
         ArrayNode flowList = res.putArray("flows");
         try {
             String reply = commander.addCmd("enable").addMainCmd("show openflow installed flows", " ", " ", " ", " ").addCmd("exit").sendCmd().recvCmd();
-            log.info(reply);
-            ObjectNode flowNode = mapper.createObjectNode();
+            res.put("raw", reply);
             for (String flow : reply.split("(?=\r\nFlow type)")) {
+                ObjectNode flowNode = mapper.createObjectNode();
                 String[] items = flow.split("(Match criteria:|Actions:|Status:)");
                 flowNode.put("type", processFlowType(items[0]));
                 flowNode.set("matches", (JsonNode)processKeyValue(items[1]));
                 flowNode.set("actions", (JsonNode)processKeyValue(items[2]));
                 flowNode.set("status", (JsonNode)processKeyValue(items[3]));
+                // add flow into flow list
+                flowList.add((JsonNode)flowNode);
             }
-            flowList.add((JsonNode)flowNode);
         }
-        catch (Exception reply) {
-            // empty catch block
+        catch (Exception e) {
+            res.put("error", true);
+            res.put("msg", e.getMessage());
         }
         return res;
     }
 
     @Override
     public ObjectNode getGroups() {
-        ObjectNode res = mapper.createObjectNode();
+        ObjectNode res = SwitchClient.createGeneralReply();
         try {
             String reply = commander.addCmd("enable").addMainCmd("show openflow installed groups", " ", " ", " ", " ").addCmd("exit").sendCmd().recvCmd();
-            log.info(reply);
-            res.set("groups", (JsonNode)processGroups(reply));
+            res.put("raw", reply);
+            res.set("groups", (JsonNode) processGroups(reply));
         }
-        catch (Exception reply) {
-            // empty catch block
+        catch (Exception e) {
+            res.put("error", true);
+            res.put("msg", e.getMessage());
         }
         return res;
     }
@@ -109,7 +123,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient {
     public void getLogs(FileWriter writer) {
         try {
             String reply = commander.addCmd("enable").addMainCmd("show logging buffered", "q").addCmd("exit").sendCmd().recvCmd();
-            String title = formatString("\u001b[32m\u001b[1m\n%s -- %s\n\u001b[0m", ip, model);
+            String title = String.format("\u001b[32m\u001b[1m\n%s -- %s\n\u001b[0m", ip, model);
             if (writer == null) {
                 log.info(title);
                 log.info(reply);
@@ -124,36 +138,74 @@ public class DXS5000Client extends SshShellClient implements SwitchClient {
     }
 
     @Override
-    public void setVxlanSourceInterfaceLoopback(String loopbackId) {
+    public ObjectNode setVxlanSourceInterfaceLoopback(String loopbackId) {
+        ObjectNode res = SwitchClient.createGeneralReply();
         try {
             String reply = commander.addCmd("enable", "configure").addCmd("vxlan enable").addMainCmd("vxlan source-interface loopback " + loopbackId, new String[0]).addCmd("exit", "exit").sendCmd().recvCmd();
-            log.info(reply);
+            res.put("raw", reply);
         }
         catch (Exception e) {
-            return;
+            res.put("error", true);
+            res.put("msg", e.getMessage());
         }
+        return res;
     }
 
     @Override
-    public void setVxlanVlan(String vnid, String vid) {
+    public ObjectNode setVxlanVlan(String vnid, String vid) {
+        ObjectNode res = SwitchClient.createGeneralReply();
         try {
             String reply = commander.addCmd("enable", "configure").addCmd("vxlan enable").addMainCmd("vxlan " + vnid + " vlan " + vid, new String[0]).addCmd("exit", "exit").sendCmd().recvCmd();
-            log.info(reply);
+            res.put("raw", reply);
         }
         catch (Exception e) {
-            return;
+            res.put("error", true);
+            res.put("msg", e.getMessage());
         }
+        return res;
     }
 
     @Override
-    public void setVxlanVtep(String vnid, String ip, String mac) {
+    public ObjectNode setVxlanVtep(String vnid, String ip, String mac) {
+        ObjectNode res = SwitchClient.createGeneralReply();
         try {
             String reply = commander.addCmd("enable", "configure").addCmd("vxlan enable").addMainCmd("vxlan " + vnid + " vtep " + ip + (mac.isEmpty() ? "" : new StringBuilder().append(" tenant-system ").append(mac).toString()), new String[0]).addCmd("exit", "exit").sendCmd().recvCmd();
-            log.info(reply);
+            res.put("raw", reply);
         }
         catch (Exception e) {
-            return;
+            res.put("error", true);
+            res.put("msg", e.getMessage());
         }
+        return res;
+    }
+
+    @Override
+    public ObjectNode setVxlanStatus(boolean flag) {
+        ObjectNode res = SwitchClient.createGeneralReply();
+        try {
+            String isopen = flag ? "" : "no ";
+            String reply = commander.addCmd("enable", "configure").addMainCmd(isopen + "vxlan enable").addCmd("exit", "exit").sendCmd().recvCmd();
+            res.put("raw", reply);
+        }
+        catch (Exception e) {
+            res.put("error", true);
+            res.put("msg", e.getMessage());
+        }
+        return res;
+    }
+
+    @Override
+    public ObjectNode showVxlan() {
+        ObjectNode res = SwitchClient.createGeneralReply();
+        try {
+            String reply = commander.addCmd("enable", "configure").addMainCmd("show vxlan").addCmd("exit", "exit").sendCmd().recvCmd();
+            res.put("raw", reply);
+        }
+        catch (Exception e) {
+            res.put("error", true);
+            res.put("msg", e.getMessage());
+        }
+        return res;
     }
 
     private String processFlowType(String flowType) {

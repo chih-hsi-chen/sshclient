@@ -8,6 +8,8 @@ import com.google.common.collect.ImmutableSet;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Set;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
@@ -42,8 +44,13 @@ public class SshClientManager implements SshClientService {
             }
         }
     );
-    private ClientConfig clientConfig;
+
+    private ObjectMapper mapper = new ObjectMapper();
+    private HashMap<String, SshClient> clients;
+    private HashMap<Integer, String> idToname;
+    private int[] width;
     private ApplicationId appId;
+
     @Reference(cardinality=ReferenceCardinality.MANDATORY)
     protected NetworkConfigRegistry cfgService;
     @Reference(cardinality=ReferenceCardinality.MANDATORY)
@@ -54,7 +61,6 @@ public class SshClientManager implements SshClientService {
         appId = coreService.registerApplication("nctu.winlab.sshrest");
         cfgService.addListener(cfgListener);
         factories.forEach((cfgService)::registerConfigFactory);
-        clientConfig = new ClientConfig();
         log.info("Started");
     }
 
@@ -68,7 +74,6 @@ public class SshClientManager implements SshClientService {
     @Override
     public void printDevices() {
         int INTERVAL = 2;
-        int[] width = clientConfig.getMaxWidth();
         String fmt = "";
 
         for (int i = 0; i < width.length; i++) {
@@ -78,32 +83,30 @@ public class SshClientManager implements SshClientService {
         
         log.info(String.format("Index" + fmt, "Name", "IP", "Port", "Username", "Model"));
         log.info("-".repeat(7 + Arrays.stream(width).sum() + INTERVAL * 4));
-        ArrayList<SshClient> sshclients = new ArrayList<SshClient>(clientConfig.clients.values());
+        ArrayList<SshClient> sshclients = new ArrayList<SshClient>(clients.values());
         for (int i = 0; i < sshclients.size(); ++i) {
             SshClient client = sshclients.get(i);
             log.info(String.format("%-7d" + fmt, i, client.ip, client.port, client.username, client.model));
         }
-        for (Integer index : clientConfig.idToname.keySet()) {
-            String name = clientConfig.idToname.get(index);
-            SshClient client = clientConfig.clients.get(name);
+        for (Integer index : idToname.keySet()) {
+            String name = idToname.get(index);
+            SshClient client = clients.get(name);
             log.info("%-7d" + fmt, index, name, client.ip, client.port, client.username, client.model);
         }
     }
 
     @Override
     public ArrayNode getDevices() {
-        ObjectMapper mapper = new ObjectMapper();
         ArrayNode node = mapper.createArrayNode();
         int index = 0;
-        for (String name : clientConfig.clients.keySet()) {
-            SshClient client = clientConfig.clients.get(name);
+        for (String name : clients.keySet()) {
+            SshClient client = clients.get(name);
             ObjectNode device = mapper.createObjectNode();
             device.put("index", index++);
             device.put("name", name);
             device.put("ip", client.ip);
             device.put("port", client.port);
             device.put("username", client.username);
-            device.put("password", client.password);
             device.put("model", client.model);
             node.add((JsonNode) device);
         }
@@ -113,25 +116,18 @@ public class SshClientManager implements SshClientService {
     @Override
     public ObjectNode getController(String deviceID) {
         String deviceName = convert2name(deviceID);
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectNode reply = mapper.createObjectNode();
-        reply.put("error", false);
-        reply.put("msg", "");
+        ObjectNode reply = createGeneralReply();
+        SshClient client;
         ArrayNode devices = reply.putArray("devices");
+
         if (deviceName.equals("ALL")) {
-            for (String cname : clientConfig.clients.keySet()) {
-                SshClient client = clientConfig.clients.get(cname);
-                if (!(client instanceof SwitchClient)) continue;
-                ObjectNode info = ((SwitchClient) client).getController();
-                info.put("name", cname);
-                devices.add((JsonNode)info);
+            for (String cname : clients.keySet()) {
+                if (!isSwitchClient(client = clients.get(cname))) continue;
+                addDeviceReply(cname, ((SwitchClient) client).getController(), devices);
             }
-        } else if (isSwitchClient(deviceName)) {
-            ObjectNode info = ((SwitchClient) clientConfig.clients.get(deviceName)).getController();
-            info.put("name", deviceName);
-            devices.add((JsonNode)info);
+        } else if (isSwitchClient(client = clients.get(deviceName))) {
+            addDeviceReply(deviceName, ((SwitchClient) client).getController(), devices);
         } else {
-            log.info("Remote machine should be switch");
             reply.put("error", true);
             reply.put("msg", "Remote machine should be switch");
         }
@@ -139,59 +135,63 @@ public class SshClientManager implements SshClientService {
     }
 
     @Override
-    public void setController(String deviceID, String ip, String port) {
+    public ObjectNode setController(String deviceID, String ip, String port) {
         String deviceName = convert2name(deviceID);
+        ObjectNode reply = createGeneralReply();
+        ArrayNode devices = reply.putArray("devices");
+        SshClient client;
+
         if (deviceName.equals("ALL")) {
-            clientConfig.clients.values().forEach(c -> {
-                if (c instanceof SwitchClient) {
-                    ((SwitchClient) c).setController(ip, port);
-                }
-            });
-        } else if (isSwitchClient(deviceName)) {
-            ((SwitchClient)clientConfig.clients.get(deviceName)).setController(ip, port);
+            for (String cname : clients.keySet()) {
+                if (!isSwitchClient(client = clients.get(cname))) continue;
+                addDeviceReply(cname, ((SwitchClient) client).setController(ip, port), devices);
+            }
+        } else if (isSwitchClient(client = clients.get(deviceName))) {
+            addDeviceReply(deviceName, ((SwitchClient) clients).setController(ip, port), devices);
         } else {
-            log.info("Remote machine should be switch");
+            reply.put("error", true);
+            reply.put("msg", "Remote machine should be switch");
         }
+        return reply;
     }
 
     @Override
-    public void unsetController(String deviceID, String ip) {
+    public ObjectNode unsetController(String deviceID, String ip) {
         String deviceName = convert2name(deviceID);
+        ObjectNode reply = mapper.createObjectNode();
+        ArrayNode devices = reply.putArray("devices");
+        SshClient client;
+
         if (deviceName.equals("ALL")) {
-            clientConfig.clients.values().forEach(c -> {
-                if (c instanceof SwitchClient) {
-                    ((SwitchClient) c).unsetController(ip);
-                }
-            });
-        } else if (isSwitchClient(deviceName)) {
-            ((SwitchClient)clientConfig.clients.get(deviceName)).unsetController(ip);
+            for (String cname : clients.keySet()) {
+                client = clients.get(cname);
+                if (!isSwitchClient(client = clients.get(cname))) continue;
+                addDeviceReply(cname, ((SwitchClient) client).unsetController(ip), devices);
+            }
+        } else if (isSwitchClient(client = clients.get(deviceName))) {
+            addDeviceReply(deviceName, ((SwitchClient) client).unsetController(ip), devices);
         } else {
-            log.info("Remote machine should be switch");
+            reply.put("error", true);
+            reply.put("msg", "Remote machine should be switch");
         }
+        return reply;
     }
 
     @Override
     public ObjectNode getFlows(String deviceID) {
         String deviceName = convert2name(deviceID);
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectNode reply = mapper.createObjectNode();
-        reply.put("error", false);
-        reply.put("msg", "");
+        ObjectNode reply = createGeneralReply();
         ArrayNode devices = reply.putArray("devices");
+        SshClient client;
+
         if (deviceName.equals("ALL")) {
-            for (String cname : clientConfig.clients.keySet()) {
-                SshClient client = clientConfig.clients.get(cname);
-                if (!(client instanceof SwitchClient)) continue;
-                ObjectNode info = ((SwitchClient) client).getFlows();
-                info.put("name", cname);
-                devices.add((JsonNode)info);
+            for (String cname : clients.keySet()) {
+                if (!isSwitchClient(client = clients.get(cname))) continue;
+                addDeviceReply(cname, ((SwitchClient) client).getFlows(), devices);
             }
-        } else if (isSwitchClient(deviceName)) {
-            ObjectNode info = ((SwitchClient)clientConfig.clients.get(deviceName)).getFlows();
-            info.put("name", deviceName);
-            devices.add((JsonNode)info);
+        } else if (isSwitchClient(client = clients.get(deviceName))) {
+            addDeviceReply(deviceName, ((SwitchClient) client).getFlows(), devices);
         } else {
-            log.info("Remote machine should be switch");
             reply.put("error", true);
             reply.put("msg", "Remote machine should be switch");
         }
@@ -201,25 +201,18 @@ public class SshClientManager implements SshClientService {
     @Override
     public ObjectNode getGroups(String deviceID) {
         String deviceName = convert2name(deviceID);
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectNode reply = mapper.createObjectNode();
-        reply.put("error", false);
-        reply.put("msg", "");
+        ObjectNode reply = createGeneralReply();
         ArrayNode devices = reply.putArray("devices");
+        SshClient client;
+
         if (deviceName.equals("ALL")) {
-            for (String cname : clientConfig.clients.keySet()) {
-                SshClient client = clientConfig.clients.get(cname);
-                if (!(client instanceof SwitchClient)) continue;
-                ObjectNode info = ((SwitchClient) client).getGroups();
-                info.put("name", cname);
-                devices.add((JsonNode)info);
+            for (String cname : clients.keySet()) {
+                if (!isSwitchClient(client = clients.get(cname))) continue;
+                addDeviceReply(cname, ((SwitchClient) client).getGroups(), devices);
             }
-        } else if (isSwitchClient(deviceName)) {
-            ObjectNode info = ((SwitchClient) clientConfig.clients.get(deviceName)).getGroups();
-            info.put("name", deviceName);
-            devices.add((JsonNode)info);
+        } else if (isSwitchClient(client = clients.get(deviceName))) {
+            addDeviceReply(deviceName, ((SwitchClient) client).getGroups(), devices);
         } else {
-            log.info("Remote machine should be switch");
             reply.put("error", true);
             reply.put("msg", "Remote machine should be switch");
         }
@@ -229,19 +222,20 @@ public class SshClientManager implements SshClientService {
     @Override
     public void getLogs(String deviceID, String filename) {
         String deviceName = convert2name(deviceID);
+        SshClient client;
         try {
-            try (FileWriter writer = filename != null ? new FileWriter(filename) : null){
-                if (deviceName.equals("ALL")) {
-                    clientConfig.clients.values().forEach(c -> {
-                        if (c instanceof SwitchClient) {
-                            ((SwitchClient)((Object)c)).getLogs(writer);
-                        }
-                    });
-                } else if (isSwitchClient(deviceName)) {
-                    ((SwitchClient)clientConfig.clients.get(deviceName)).getLogs(writer);
-                } else {
-                    log.info("Remote machine should be switch");
-                }
+            FileWriter writer = filename != null ? new FileWriter(filename) : null;
+            
+            if (deviceName.equals("ALL")) {
+                clients.values().forEach(c -> {
+                    if (isSwitchClient(c)) {
+                        ((SwitchClient) c).getLogs(writer);
+                    }
+                });
+            } else if (isSwitchClient(client = clients.get(deviceName))) {
+                ((SwitchClient) client).getLogs(writer);
+            } else {
+                log.info("Remote machine should be switch");
             }
         }
         catch (Exception e) {
@@ -252,14 +246,16 @@ public class SshClientManager implements SshClientService {
     @Override
     public void execCommand(String deviceID, String cmd) {
         String deviceName = convert2name(deviceID);
+        SshClient client;
+
         if (deviceName.equals("ALL")) {
-            clientConfig.clients.values().forEach(c -> {
-                if (c instanceof ServerClient) {
+            clients.values().forEach(c -> {
+                if (isServerClient(c)) {
                     ((ServerClient) c).execCommand(cmd);
                 }
             });
-        } else if (isServerClient(deviceName)) {
-            ((ServerClient)clientConfig.clients.get(deviceName)).execCommand(cmd);
+        } else if (isServerClient(client = clients.get(deviceName))) {
+            ((ServerClient) client).execCommand(cmd);
         } else {
             log.info("Remote machine should be server");
         }
@@ -268,8 +264,15 @@ public class SshClientManager implements SshClientService {
     @Override
     public void execSudoCommand(String deviceID, String cmd) {
         String deviceName = convert2name(deviceID);
-        if (isServerClient(deviceName)) {
-            ((ServerClient)clientConfig.clients.get(deviceName)).execSudoCommand(cmd);
+        SshClient client;
+        if (deviceName.equals("ALL")) {
+            clients.values().forEach(c -> {
+                if (isServerClient(c)) {
+                    ((ServerClient) c).execSudoCommand(cmd);
+                }
+            });
+        } else if (isServerClient(client = clients.get(deviceName))) {
+            ((ServerClient) client).execSudoCommand(cmd);
         } else {
             log.info("Remote machine should be server");
         }
@@ -278,130 +281,187 @@ public class SshClientManager implements SshClientService {
     @Override
     public void setSsid(String deviceID, String ifname, String ssid) {
         String deviceName = convert2name(deviceID);
+        SshClient client;
+
         if (deviceName.equals("ALL")) {
-            clientConfig.clients.values().forEach(c -> {
-                if (c instanceof ApClient) {
+            clients.values().forEach(c -> {
+                if (isApClient(c)) {
                     ((ApClient) c).setSsid(ifname, ssid);
                 }
             });
-        } else if (isApClient(deviceName)) {
-            ((ApClient)clientConfig.clients.get(deviceName)).setSsid(ifname, ssid);
+        } else if (isApClient(client = clients.get(deviceName))) {
+            ((ApClient) client).setSsid(ifname, ssid);
         } else {
             log.info("Remote machine should be AP");
         }
     }
 
     @Override
-    public void setVxlanSourceInterfaceLoopback(String deviceID, String loopbackId) {
+    public ObjectNode setVxlanSourceInterfaceLoopback(String deviceID, String loopbackId) {
         String deviceName = convert2name(deviceID);
+        ObjectNode reply = createGeneralReply();
+        ArrayNode devices = reply.putArray("devices");
+        SshClient client;
+
         if (deviceName.equals("ALL")) {
-            clientConfig.clients.values().forEach(c -> {
-                if (c instanceof DXS5000Client) {
-                    ((DXS5000Client) c).setVxlanSourceInterfaceLoopback(loopbackId);
-                }
-            });
-        } else if (isDxs5000Client(deviceName)) {
-            ((DXS5000Client) clientConfig.clients.get(deviceName)).setVxlanSourceInterfaceLoopback(loopbackId);
+            for (String cname : clients.keySet()) {
+                if (!isVxlanSupported(client = clients.get(cname))) continue;
+                addDeviceReply(cname, ((VxlanSwitch) client).setVxlanSourceInterfaceLoopback(loopbackId), devices);
+            }
+        } else if (isVxlanSupported(client = clients.get(deviceName))) {
+            addDeviceReply(deviceName, ((VxlanSwitch) client).setVxlanSourceInterfaceLoopback(loopbackId), devices);
         } else {
-            log.info("Remote machine should be DXS-5000");
+            reply.put("error", true);
+            reply.put("msg", "Remote machine should be VXLAN supported switch");
         }
+        return reply;
     }
 
     @Override
-    public void setVxlanVlan(String deviceID, String vnid, String vid) {
+    public ObjectNode setVxlanVlan(String deviceID, String vnid, String vid) {
         String deviceName = convert2name(deviceID);
+        ObjectNode reply = createGeneralReply();
+        ArrayNode devices = reply.putArray("devices");
+        SshClient client;
+
         if (deviceName.equals("ALL")) {
-            clientConfig.clients.values().forEach(c -> {
-                if (c instanceof DXS5000Client) {
-                    ((DXS5000Client) c).setVxlanVlan(vnid, vid);
-                }
-            });
-        } else if (isDxs5000Client(deviceName)) {
-            ((DXS5000Client)clientConfig.clients.get(deviceName)).setVxlanVlan(vnid, vid);
+            for (String cname : clients.keySet()) {
+                if (!isVxlanSupported(client = clients.get(cname))) continue;
+                addDeviceReply(cname, ((VxlanSwitch) client).setVxlanVlan(vnid, vid), devices);
+            }
+        } else if (isVxlanSupported(client = clients.get(deviceName))) {
+            addDeviceReply(deviceName, ((VxlanSwitch) client).setVxlanVlan(vnid, vid), devices);
         } else {
-            log.info("Remote machine should be DXS-5000");
+            reply.put("error", true);
+            reply.put("msg", "Remote machine should be VXLAN supported switch");
         }
+        return reply;
     }
 
     @Override
-    public void setVxlanVtep(String deviceID, String vnid, String ip, String mac) {
+    public ObjectNode setVxlanVtep(String deviceID, String vnid, String ip, String mac) {
         String deviceName = convert2name(deviceID);
+        ObjectNode reply = createGeneralReply();
+        ArrayNode devices = reply.putArray("devices");
+        SshClient client;
+
         if (deviceName.equals("ALL")) {
-            clientConfig.clients.values().forEach(c -> {
-                if (c instanceof DXS5000Client) {
-                    ((DXS5000Client)c).setVxlanVtep(vnid, ip, mac);
-                }
-            });
-        } else if (isDxs5000Client(deviceName)) {
-            ((DXS5000Client)clientConfig.clients.get(deviceName)).setVxlanVtep(vnid, ip, mac);
+            for (String cname : clients.keySet()) {
+                if (!isVxlanSupported(client = clients.get(cname))) continue;
+                addDeviceReply(cname, ((VxlanSwitch) client).setVxlanVtep(vnid, ip, mac), devices);
+            }
+        } else if (isVxlanSupported(client = clients.get(deviceName))) {
+            addDeviceReply(deviceName, ((VxlanSwitch) client).setVxlanVtep(vnid, ip, mac), devices);
         } else {
-            log.info("Remote machine should be DXS-5000");
+            reply.put("error", true);
+            reply.put("msg", "Remote machine should be VXLAN supported switch");
         }
+        return reply;
+    }
+
+    @Override
+    public ObjectNode setVxlanStatus(String deviceID, boolean flag) {
+        String deviceName = convert2name(deviceID);
+        ObjectNode reply = createGeneralReply();
+        ArrayNode devices = reply.putArray("devices");
+        SshClient client;
+
+        log.info("stauts: {}", flag);
+
+        if (deviceName.equals("ALL")) {
+            for (String cname : clients.keySet()) {
+                if (!isVxlanSupported(client = clients.get(cname))) continue;
+                addDeviceReply(cname, ((VxlanSwitch) client).setVxlanStatus(flag), devices);
+            }
+        } else if (isVxlanSupported(client = clients.get(deviceName))) {
+            addDeviceReply(deviceName, ((VxlanSwitch) client).setVxlanStatus(flag), devices);
+        } else {
+            reply.put("error", true);
+            reply.put("msg", "Remote machine should be VXLAN supported switch");
+        }
+        return reply;
+    }
+
+    @Override
+    public ObjectNode showVxlan(String deviceID) {
+        String deviceName = convert2name(deviceID);
+        ObjectNode reply = createGeneralReply();
+        ArrayNode devices = reply.putArray("devices");
+        SshClient client;
+
+        if (deviceName.equals("ALL")) {
+            for (String cname : clients.keySet()) {
+                if (!isVxlanSupported(client = clients.get(cname))) continue;
+                addDeviceReply(cname, ((VxlanSwitch) client).showVxlan(), devices);
+            }
+        } else if (isVxlanSupported(client = clients.get(deviceName))) {
+            addDeviceReply(deviceName, ((VxlanSwitch) client).showVxlan(), devices);
+        } else {
+            reply.put("error", true);
+            reply.put("msg", "Remote machine should be VXLAN supported switch");
+        }
+        return reply;
+    }
+
+    @Override
+    public int[] getWidth() {
+        return width;
     }
 
     private String convert2name(String deviceID) {
         try {
             Integer index = Integer.parseInt(deviceID);
-            return clientConfig.idToname.get(index);
+            return idToname.get(index);
         } catch (NumberFormatException e) {
             // Input is a string
             return deviceID;
         }
     }
 
-    private boolean isSwitchClient(String deviceName) {
-        return clientConfig.clients.get(deviceName) instanceof SwitchClient;
+    private ObjectNode createGeneralReply() {
+        ObjectNode reply = mapper.createObjectNode();
+        reply.put("error", false);
+        reply.put("msg", "");
+        return reply;
     }
 
-    private boolean isServerClient(String deviceName) {
-        return clientConfig.clients.get(deviceName) instanceof ServerClient;
+    private void addDeviceReply(String deviceID, ObjectNode reply, ArrayNode arr) {
+        ObjectNode device = mapper.createObjectNode();
+        device.put("name", deviceID);
+        merge(device, reply);
+        arr.add(device);
     }
 
-    private boolean isApClient(String deviceName) {
-        return clientConfig.clients.get(deviceName) instanceof ApClient;
+    private void merge(JsonNode main, JsonNode update) {
+        Iterator<String> fieldnames = update.fieldNames();
+        while (fieldnames.hasNext()) {
+            String fn = fieldnames.next();
+            JsonNode value = main.get(fn);
+            if (value != null && value.isObject()) {
+                merge(value, update.get(fn));
+            } else {
+                if (main instanceof ObjectNode) {
+                    ((ObjectNode) main).set(fn, update.get(fn));
+                }
+            }
+        }
     }
 
-    private boolean isDxs5000Client(String deviceName) {
-        return clientConfig.clients.get(deviceName) instanceof DXS5000Client;
+    private boolean isSwitchClient(SshClient client) {
+        return client instanceof SwitchClient;
     }
 
-    // private String formatString(String format, Object ... args) {
-    //     StringBuffer buffer = new StringBuffer();
-    //     Formatter formatter = new Formatter(buffer);
-    //     String output = formatter.format(format, args).toString();
-    //     formatter.close();
-    //     return output;
-    // }
+    private boolean isServerClient(SshClient client) {
+        return client instanceof ServerClient;
+    }
 
-    // private class SshClientPrinter {
-    //     private static final int INTERVAL = 2;
-    //     private final String[] FIELDS = new String[]{"IP", "Port", "Username", "Model"};
-    //     private int[] width = Arrays.stream(FIELDS).mapToInt(String::length).toArray();
+    private boolean isApClient(SshClient client) {
+        return client instanceof ApClient;
+    }
 
-    //     private SshClientPrinter() {
-    //     }
-
-    //     public void updateMaxWidth(ClientConfig config) {
-    //         int[] maxWidth = config.getMaxWidth();
-    //         for (int i = 0; i < maxWidth.length; ++i) {
-    //             width[i] = maxWidth[i] > width[i] ? maxWidth[i] : width[i];
-    //         }
-    //     }
-
-    //     public void printDevices(HashMap<String, SshClient> clients) {
-    //         String fmt = "%-" + String.valueOf(width[0] + INTERVAL) + "s" +
-    //                 "%-" + String.valueOf(width[1] + INTERVAL) + "s" +
-    //                 "%-" + String.valueOf(width[2] + INTERVAL) + "s" +
-    //                 "%-" + String.valueOf(width[3] + INTERVAL) + "s" + "\n";
-    //         log.info(formatString("Index  " + fmt, new Object[]{"IP", "Port", "Username", "Model"}));
-    //         log.info("-".repeat(7 + Arrays.stream(width).sum() + INTERVAL * 4));
-    //         ArrayList<SshClient> sshclients = new ArrayList<SshClient>(clients.values());
-    //         for (int i = 0; i < sshclients.size(); ++i) {
-    //             SshClient client = sshclients.get(i);
-    //             log.info(formatString("%-7d" + fmt, new Object[]{i, client.ip, client.port, client.username, client.model}));
-    //         }
-    //     }
-    // }
+    private boolean isVxlanSupported(SshClient client) {
+        return client instanceof VxlanSwitch;
+    }
 
     private class SshClientConfigListener implements NetworkConfigListener {
         private SshClientConfigListener() {
@@ -412,8 +472,10 @@ public class SshClientManager implements SshClientService {
                 && event.configClass().equals(SshClientConfig.class)) {
                 SshClientConfig config = cfgService.getConfig(appId, SshClientConfig.class);
                 if (config != null) {
-                    clientConfig = new ClientConfig((ObjectNode)config.clientInfo());
-                    // printer.updateMaxWidth(clientConfig);
+                    config.parseConfig();
+                    clients = config.getClients();
+                    idToname = config.getIdMap();
+                    width = config.getMaxWidth();
                     log.info("Config file uploaded successfully");
                 }
             }

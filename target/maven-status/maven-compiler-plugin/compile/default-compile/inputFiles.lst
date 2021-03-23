@@ -10,8 +10,9 @@
 /home/cch/sshrest/src/main/java/nctu/winlab/sshrest/SSHRestWebResource.java
 /home/cch/sshrest/src/main/java/nctu/winlab/sshrest/SshClientService.java
 /home/cch/sshrest/src/main/java/nctu/winlab/sshrest/SshExecClient.java
-/home/cch/sshrest/src/main/java/nctu/winlab/sshrest/ClientConfig.java
+/home/cch/sshrest/src/main/java/nctu/winlab/sshrest/SSHClientCommand.java
 /home/cch/sshrest/src/main/java/nctu/winlab/sshrest/Dir835Client.java
 /home/cch/sshrest/src/main/java/nctu/winlab/sshrest/SshClientConfig.java
+/home/cch/sshrest/src/main/java/nctu/winlab/sshrest/VxlanSwitch.java
 /home/cch/sshrest/src/main/java/nctu/winlab/sshrest/SwitchClient.java
 /home/cch/sshrest/target/generated-sources/nctu/winlab/sshrest/ApiDocRegistrator.java

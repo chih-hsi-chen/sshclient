@@ -47,7 +47,8 @@ public class SSHRestWebResource extends AbstractWebResource {
     public Response setController(@PathParam(value="switchName") String switchName,
                                   InputStream stream) {
         
-        SshClientService clientService = get(SshClientService.class);                              
+        SshClientService clientService = get(SshClientService.class);
+        ObjectNode root;
         try {
             ObjectNode jsonTree = readTreeFromStream(mapper(), stream);
             String ip = jsonTree.path("ip").asText("");
@@ -56,12 +57,12 @@ public class SSHRestWebResource extends AbstractWebResource {
             if (ip == "") {
                 throw new IllegalArgumentException("there is need for controller IP address");
             }
-            clientService.setController(switchName, ip, port);
+            root = clientService.setController(switchName, ip, port);
         } catch (IOException ex) {
             throw new IllegalArgumentException(ex);
         }
         
-        return Response.ok().build();
+        return Response.ok(root).build();
     }
 
     /**
@@ -78,18 +79,18 @@ public class SSHRestWebResource extends AbstractWebResource {
     public Response unsetController(@PathParam(value="switchName") String switchName, 
                                     InputStream stream) {
         SshClientService clientService = get(SshClientService.class);
-
+        ObjectNode root;
         try {
             ObjectNode jsonTree = readTreeFromStream(mapper(), stream);
             String ip = jsonTree.get("ip").asText("");
 
             if (ip == "")
                 throw new IllegalArgumentException("Please specify controller IP address");
-            clientService.unsetController(switchName, ip);
+            root = clientService.unsetController(switchName, ip);
         } catch (IOException ex) {
             throw new IllegalArgumentException(ex);
         }
-        return Response.ok().build();
+        return Response.ok(root).build();
     }
 
     @GET
@@ -217,17 +218,18 @@ public class SSHRestWebResource extends AbstractWebResource {
     public Response setVxlanSourceInterfaceLoopback(@PathParam(value="switchName") String switchName, 
                                     InputStream stream) {
         SshClientService clientService = get(SshClientService.class);
+        ObjectNode root;
         try {
             ObjectNode jsonTree = readTreeFromStream(mapper(), stream);
             String loopbackId = jsonTree.get("id").asText("");
 
             if (loopbackId == "")
                 throw new IllegalArgumentException("Please specify VXLAN Source loopback ID");
-            clientService.setVxlanSourceInterfaceLoopback(switchName, loopbackId);
+            root = clientService.setVxlanSourceInterfaceLoopback(switchName, loopbackId);
         } catch (IOException ex) {
             throw new IllegalArgumentException(ex);
         }
-        return Response.ok().build();
+        return Response.ok(root).build();
     }
 
     /**
@@ -244,6 +246,7 @@ public class SSHRestWebResource extends AbstractWebResource {
     public Response setVxlanVlan(@PathParam(value="switchName") String switchName, 
                                     InputStream stream) {
         SshClientService clientService = get(SshClientService.class);
+        ObjectNode root;
         try {
             ObjectNode jsonTree = readTreeFromStream(mapper(), stream);
             String vnid = jsonTree.get("vnid").asText("");
@@ -251,11 +254,11 @@ public class SSHRestWebResource extends AbstractWebResource {
 
             if (vnid == "" || vid == "")
                 throw new IllegalArgumentException("Please specify VNI or VLAN ID");
-            clientService.setVxlanVlan(switchName, vnid, vid);
+            root = clientService.setVxlanVlan(switchName, vnid, vid);
         } catch (IOException ex) {
             throw new IllegalArgumentException(ex);
         }
-        return Response.ok().build();
+        return Response.ok(root).build();
     }
 
     /**
@@ -272,6 +275,7 @@ public class SSHRestWebResource extends AbstractWebResource {
     public Response setVxlanVtep(@PathParam(value="switchName") String switchName, 
                                     InputStream stream) {
         SshClientService clientService = get(SshClientService.class);
+        ObjectNode root;
         try {
             ObjectNode jsonTree = readTreeFromStream(mapper(), stream);
             String vnid = jsonTree.get("vnid").asText("");
@@ -280,10 +284,35 @@ public class SSHRestWebResource extends AbstractWebResource {
 
             if (vnid == "" || ip == "")
                 throw new IllegalArgumentException("Please specify both VNI and IP address");
-            clientService.setVxlanVtep(switchName, vnid, ip, mac);
+            root = clientService.setVxlanVtep(switchName, vnid, ip, mac);
         } catch (IOException ex) {
             throw new IllegalArgumentException(ex);
         }
-        return Response.ok().build();
+        return Response.ok(root).build();
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path(value = "vxlan/{switchName}")
+    public Response setVxlanStatus(@PathParam(value = "switchName") String switchName,
+                                   @QueryParam(value = "status") boolean status,
+                                   InputStream stream) {
+        SshClientService clientService = get(SshClientService.class);
+        ObjectNode root;
+
+        System.out.println("vxlan switch");
+
+        root = clientService.setVxlanStatus(switchName, status);
+
+        return Response.ok(root).build();
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path(value = "vxlan/{switchName}")
+    public Response showVxlan(@PathParam(value = "switchName") String switchName) {
+        SshClientService clientService = get(SshClientService.class);
+        return Response.ok(clientService.showVxlan(switchName)).build();
     }
 }

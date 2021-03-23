@@ -4,11 +4,8 @@ import com.jcraft.jsch.ChannelExec;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.util.logging.Logger;
 
 public class SshExecClient extends SshClient {
-    private static Logger log = Logger.getLogger(SshExecClient.class.getName());
-
     public SshExecClient(String ip, String port, String username, String password) {
         super(ip, port, username, password);
     }
@@ -23,7 +20,7 @@ public class SshExecClient extends SshClient {
             }
         }
         catch (Exception e) {
-            log.warning(formatString("\u001b[31m\u001b[1m\nFailed to connect to %s:%s\n\u001b[0m", ip, port));
+            System.err.printf("\u001b[31m\u001b[1m\nFailed to connect to %s:%s\n\u001b[0m", ip, port);
             throw e;
         }
     }
@@ -37,7 +34,7 @@ public class SshExecClient extends SshClient {
             channel.connect();
         }
         catch (Exception e) {
-            log.info(formatString("Failed to open exec channel to %s:%s", ip, port));
+            System.err.printf("Failed to open exec channel to %s:%s", ip, port);
             throw e;
         }
     }

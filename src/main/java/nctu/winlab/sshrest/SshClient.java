@@ -4,7 +4,6 @@ import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 import java.io.BufferedReader;
-import java.util.Formatter;
 
 public abstract class SshClient {
     public String ip;
@@ -28,13 +27,5 @@ public abstract class SshClient {
         this.port = port;
         this.username = username;
         this.password = password;
-    }
-
-    protected String formatString(String format, Object ... args) {
-        StringBuffer buffer = new StringBuffer();
-        Formatter formatter = new Formatter(buffer);
-        String output = formatter.format(format, args).toString();
-        formatter.close();
-        return output;
     }
 }
