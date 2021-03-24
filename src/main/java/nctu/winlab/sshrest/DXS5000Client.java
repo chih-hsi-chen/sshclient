@@ -24,7 +24,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
 
     @Override
     public ObjectNode getController() {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         ArrayNode controllerList = res.putArray("controllers");
         String rawoutput = "";
         try {
@@ -33,7 +33,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
             rawoutput += String.format("%-17s%-7s%-6s%s\n", "IP", "Port", "Mode", "Role");
             for (String controller : controllers) {
                 String[] infos = (String[])Stream.of(controller.split("[ \t]+")).filter(i -> !i.isEmpty()).toArray(x$0 -> new String[x$0]);
-                ObjectNode c = mapper.createObjectNode();
+                ObjectNode c = mapper().createObjectNode();
                 rawoutput += String.format("%-17s%-7s%-6s%s\n", infos[0], infos[1], infos[2], infos[3]);
                 c.put("ip", infos[0]);
                 c.put("port", infos[1]);
@@ -52,7 +52,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
 
     @Override
     public ObjectNode setController(String ip, String port) {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         String proto = "tcp";
         try {
             String reply = commander.addCmd("enable", "configure").addMainCmd("openflow controller " + ip + " " + port + " " + proto).addCmd("exit", "exit").sendCmd().recvCmd();
@@ -67,7 +67,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
 
     @Override
     public ObjectNode unsetController(String ip) {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         try {
             String reply = commander.addCmd("enable", "configure").addMainCmd("no openflow controller " + ip).addCmd("exit", "exit").sendCmd().recvCmd();
             res.put("raw", reply);
@@ -81,13 +81,13 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
 
     @Override
     public ObjectNode getFlows() {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         ArrayNode flowList = res.putArray("flows");
         try {
             String reply = commander.addCmd("enable").addMainCmd("show openflow installed flows", " ", " ", " ", " ").addCmd("exit").sendCmd().recvCmd();
             res.put("raw", reply);
             for (String flow : reply.split("(?=\r\nFlow type)")) {
-                ObjectNode flowNode = mapper.createObjectNode();
+                ObjectNode flowNode = mapper().createObjectNode();
                 String[] items = flow.split("(Match criteria:|Actions:|Status:)");
                 flowNode.put("type", processFlowType(items[0]));
                 flowNode.set("matches", (JsonNode)processKeyValue(items[1]));
@@ -106,7 +106,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
 
     @Override
     public ObjectNode getGroups() {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         try {
             String reply = commander.addCmd("enable").addMainCmd("show openflow installed groups", " ", " ", " ", " ").addCmd("exit").sendCmd().recvCmd();
             res.put("raw", reply);
@@ -139,7 +139,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
 
     @Override
     public ObjectNode setVxlanSourceInterfaceLoopback(String loopbackId) {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         try {
             String reply = commander.addCmd("enable", "configure").addCmd("vxlan enable").addMainCmd("vxlan source-interface loopback " + loopbackId, new String[0]).addCmd("exit", "exit").sendCmd().recvCmd();
             res.put("raw", reply);
@@ -153,7 +153,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
 
     @Override
     public ObjectNode setVxlanVlan(String vnid, String vid) {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         try {
             String reply = commander.addCmd("enable", "configure").addCmd("vxlan enable").addMainCmd("vxlan " + vnid + " vlan " + vid, new String[0]).addCmd("exit", "exit").sendCmd().recvCmd();
             res.put("raw", reply);
@@ -167,7 +167,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
 
     @Override
     public ObjectNode setVxlanVtep(String vnid, String ip, String mac) {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         try {
             String reply = commander.addCmd("enable", "configure").addCmd("vxlan enable").addMainCmd("vxlan " + vnid + " vtep " + ip + (mac.isEmpty() ? "" : new StringBuilder().append(" tenant-system ").append(mac).toString()), new String[0]).addCmd("exit", "exit").sendCmd().recvCmd();
             res.put("raw", reply);
@@ -181,7 +181,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
 
     @Override
     public ObjectNode setVxlanStatus(boolean flag) {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         try {
             String isopen = flag ? "" : "no ";
             String reply = commander.addCmd("enable", "configure").addMainCmd(isopen + "vxlan enable").addCmd("exit", "exit").sendCmd().recvCmd();
@@ -196,7 +196,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
 
     @Override
     public ObjectNode showVxlan() {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         try {
             String reply = commander.addCmd("enable", "configure").addMainCmd("show vxlan").addCmd("exit", "exit").sendCmd().recvCmd();
             res.put("raw", reply);
@@ -214,7 +214,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
 
     private ObjectNode processKeyValue(String raw) {
         String[] lineFields = raw.split("\r\n");
-        ObjectNode dictNode = mapper.createObjectNode();
+        ObjectNode dictNode = mapper().createObjectNode();
         for (String line : lineFields) {
             String[] patterns = line.split(" : ");
             if ((line = line.strip()).length() == 0)
@@ -232,7 +232,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
     private ArrayNode processGroups(String raw) {
         ObjectNode group = null;
         ObjectNode bucket = null;
-        ArrayNode groups = mapper.createArrayNode();
+        ArrayNode groups = mapper().createArrayNode();
         ArrayNode buckets = null;
         String[] rawGroups = raw.split("[\r\n]+");
         String[] reducedRawGroups = Arrays.copyOfRange(rawGroups, 7, rawGroups.length);
@@ -244,7 +244,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
             Pattern pattern;
             if (line.indexOf("Group Id") == 0) {
                 state = 0;
-                group = mapper.createObjectNode();
+                group = mapper().createObjectNode();
                 groups.add((JsonNode)group);
                 buckets = group.putArray("buckets");
                 pattern = Pattern.compile("(\\d+)");
@@ -263,7 +263,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
             }
             if (line.contains("Bucket entry list for group")) {
                 state = 2;
-                bucket = mapper.createObjectNode();
+                bucket = mapper().createObjectNode();
                 buckets.add((JsonNode)bucket);
                 continue;
             }

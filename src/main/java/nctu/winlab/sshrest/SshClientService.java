@@ -66,14 +66,14 @@ public interface SshClientService {
      * @param deviceID server name; if given "ALL", then represent all servers
      * @param cmd command for execution
      */
-    public void execCommand(String deviceID, String cmd);
+    public ObjectNode execCommand(String deviceID, String cmd);
     /**
      * Execute priviledged command on server
      * 
      * @param deviceID server name; if given "ALL", then represent all servers
      * @param cmd command for execution
      */
-    public void execSudoCommand(String deviceID, String cmd);
+    public ObjectNode execSudoCommand(String deviceID, String cmd);
     /**
      * Set SSID of an AP
      * 

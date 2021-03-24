@@ -21,7 +21,7 @@ public class DGS3630Client extends SshShellClient implements SwitchClient {
 
     @Override
     public ObjectNode getController() {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         ArrayNode controllerList = res.putArray("controllers");
         String rawoutput = "";
         try {
@@ -30,7 +30,7 @@ public class DGS3630Client extends SshShellClient implements SwitchClient {
             rawoutput += String.format("%-17s%-7s%-6s%s\n", "IP", "Port", "Mode", "Role");
             for (String controller : controllers) {
                 String[] infos = controller.split("[ \t]+");
-                ObjectNode c = mapper.createObjectNode();
+                ObjectNode c = mapper().createObjectNode();
                 rawoutput += String.format("%-17s%-7s%-6s%s\n", infos[0], infos[1], infos[2], infos[3]);
                 c.put("ip", infos[0]);
                 c.put("port", infos[1]);
@@ -48,7 +48,7 @@ public class DGS3630Client extends SshShellClient implements SwitchClient {
 
     @Override
     public ObjectNode setController(String ip, String port) {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         try {
             port = port.isEmpty() ? port : " service-port " + port;
             String reply = commander.addCmd("configure terminal").addMainCmd("openflow controller " + ip + port, new String[0]).addCmd("exit").sendCmd().recvCmd();
@@ -63,7 +63,7 @@ public class DGS3630Client extends SshShellClient implements SwitchClient {
 
     @Override
     public ObjectNode unsetController(String ip) {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         try {
             String reply = commander.addCmd("configure terminal").addMainCmd("no openflow controller " + ip, new String[0]).addCmd("exit").sendCmd().recvCmd();
             res.put("raw", reply);
@@ -77,7 +77,7 @@ public class DGS3630Client extends SshShellClient implements SwitchClient {
 
     @Override
     public ObjectNode getFlows() {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         ArrayNode flowList = res.putArray("flows");
         try {
             String reply = commander.addMainCmd("show openflow flows", "a").sendCmd().recvCmd();
@@ -92,7 +92,7 @@ public class DGS3630Client extends SshShellClient implements SwitchClient {
 
     @Override
     public ObjectNode getGroups() {
-        ObjectNode res = SwitchClient.createGeneralReply();
+        ObjectNode res = createGeneralReply();
         try {
             String reply = commander.addMainCmd("show openflow group-desc", "a").sendCmd().recvCmd();
             res.put("raw", reply);

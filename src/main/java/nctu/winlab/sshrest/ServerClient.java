@@ -3,7 +3,9 @@
  */
 package nctu.winlab.sshrest;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 public interface ServerClient {
-    public void execCommand(String cmd);
-    public void execSudoCommand(String cmd);
+    public ObjectNode execCommand(String cmd);
+    public ObjectNode execSudoCommand(String cmd);
 }

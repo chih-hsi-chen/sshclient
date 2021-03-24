@@ -175,7 +175,11 @@ public class SSHClientCommand extends AbstractShellCommand {
     }
 
     private void execHandler() {
-        service.execCommand(target, contents[0]);
+        String cmd = String.join(" ", contents);
+        if (contents[0].equals("sudo"))
+            output(service.execSudoCommand(target, cmd));
+        else
+            output(service.execCommand(target, cmd));
     }
 
     private void vxlanHandler() {
@@ -230,14 +234,17 @@ public class SSHClientCommand extends AbstractShellCommand {
     private void output(ObjectNode res) {
         if (res.path("error").asBoolean(false)) {
             System.out.printf("Error: %s", res.path("msg").asText("unknown error"));
-        } else {
-            ArrayNode devices = (ArrayNode) res.get("devices");
-            for (JsonNode device : devices) {
-                if (device instanceof ObjectNode) {
-                    String raw = device.get("raw").asText("").trim();
-                    System.out.printf(ANSI_GREEN + ANSI_BOLD + "[%s]\n" + ANSI_RESET, device.get("name").asText());
-                    System.out.printf("%s\n", raw.equals("") ? "success" : raw);
-                }
+            return;
+        }
+        ArrayNode devices = (ArrayNode) res.get("devices");
+        for (JsonNode device : devices) {
+            System.out.printf(ANSI_GREEN + ANSI_BOLD + "[%s]\n" + ANSI_RESET, device.get("name").asText());
+
+            if (device.path("error").asBoolean(false)) {
+                System.out.printf("Error: %s\n", device.path("msg").asText("unknown error").trim());
+            } else {
+                String raw = device.get("raw").asText("").trim();
+                System.out.printf("%s\n", raw.equals("") ? "success" : raw);
             }
         }
     }

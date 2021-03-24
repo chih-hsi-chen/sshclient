@@ -1,9 +1,9 @@
 package nctu.winlab.sshrest;
 
-import java.util.logging.Logger;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import static nctu.winlab.sshrest.SSHConstants.mapper;
 
 public class DefaultServerClient extends SshExecClient implements ServerClient {
-    private static Logger log = Logger.getLogger(DefaultServerClient.class.getName());
 
     public DefaultServerClient(String ip, String port, String username, String password, String model) {
         super(ip, port, username, password);
@@ -11,24 +11,32 @@ public class DefaultServerClient extends SshExecClient implements ServerClient {
     }
 
     @Override
-    public void execCommand(String cmd) {
+    public ObjectNode execCommand(String cmd) {
+        ObjectNode res = mapper.createObjectNode();
         try {
             sendCmd(cmd);
-            log.info(recvCmd());
+            res.put("raw", recvCmd());
         }
         catch (Exception e) {
-            return;
+            res.put("error", true);
+            res.put("msg", e.getMessage());
         }
+        return res;
     }
 
     @Override
-    public void execSudoCommand(String cmd) {
+    public ObjectNode execSudoCommand(String cmd) {
+        ObjectNode res = mapper.createObjectNode();
         try {
             sendSudoCmd(cmd, password);
-            log.info(recvCmd());
+            String reply = recvCmd();
+            System.out.printf("reply: %s\n", reply);
+            res.put("raw", reply);
         }
         catch (Exception e) {
-            return;
+            res.put("error", true);
+            res.put("msg", e.getMessage());
         }
+        return res;
     }
 }

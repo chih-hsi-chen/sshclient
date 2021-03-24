@@ -1,9 +1,13 @@
 package nctu.winlab.sshrest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 import java.io.BufferedReader;
+
+import static nctu.winlab.sshrest.SSHConstants.mapper;
 
 public abstract class SshClient {
     public String ip;
@@ -23,5 +27,17 @@ public abstract class SshClient {
         this.port = port;
         this.username = username;
         this.password = password;
+    }
+
+    protected ObjectMapper mapper() {
+        return mapper;
+    }
+
+    protected ObjectNode createGeneralReply() {
+        ObjectNode reply = mapper.createObjectNode();
+        reply.put("error", false);
+        reply.put("msg", "");
+        reply.put("raw", "");
+        return reply;
     }
 }
