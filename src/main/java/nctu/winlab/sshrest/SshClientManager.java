@@ -6,8 +6,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableSet;
 import java.io.FileWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
@@ -69,30 +67,6 @@ public class SshClientManager implements SshClientService {
         cfgService.removeListener(cfgListener);
         factories.forEach((cfgService)::unregisterConfigFactory);
         log.info("Stopped");
-    }
-
-    @Override
-    public void printDevices() {
-        int INTERVAL = 2;
-        String fmt = "";
-
-        for (int i = 0; i < width.length; i++) {
-            fmt.concat("%-" + String.valueOf(width[i] + INTERVAL) + "s");
-        }
-        fmt += "\n";
-        
-        log.info(String.format("Index" + fmt, "Name", "IP", "Port", "Username", "Model"));
-        log.info("-".repeat(7 + Arrays.stream(width).sum() + INTERVAL * 4));
-        ArrayList<SshClient> sshclients = new ArrayList<SshClient>(clients.values());
-        for (int i = 0; i < sshclients.size(); ++i) {
-            SshClient client = sshclients.get(i);
-            log.info(String.format("%-7d" + fmt, i, client.ip, client.port, client.username, client.model));
-        }
-        for (Integer index : idToname.keySet()) {
-            String name = idToname.get(index);
-            SshClient client = clients.get(name);
-            log.info("%-7d" + fmt, index, name, client.ip, client.port, client.username, client.model);
-        }
     }
 
     @Override

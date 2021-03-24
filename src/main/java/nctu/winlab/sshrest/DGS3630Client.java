@@ -7,6 +7,10 @@ import java.io.FileWriter;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
+import static nctu.winlab.sshrest.SSHConstants.ANSI_BOLD;
+import static nctu.winlab.sshrest.SSHConstants.ANSI_GREEN;
+import static nctu.winlab.sshrest.SSHConstants.ANSI_RESET;
+
 public class DGS3630Client extends SshShellClient implements SwitchClient {
     private static Logger log = Logger.getLogger(DGS3630Client.class.getName());
 
@@ -23,7 +27,6 @@ public class DGS3630Client extends SshShellClient implements SwitchClient {
         try {
             String[] reply = commander.addMainCmd("show openflow configuration", new String[0]).sendCmd().recvCmd().split("[\r\n]+");
             String[] controllers = Arrays.copyOfRange(reply, 11, reply.length - 1);
-            rawoutput += String.format("\u001b[32m\u001b[1m\n%s -- %s\n\u001b[0m", ip, model);
             rawoutput += String.format("%-17s%-7s%-6s%s\n", "IP", "Port", "Mode", "Role");
             for (String controller : controllers) {
                 String[] infos = controller.split("[ \t]+");
@@ -105,7 +108,7 @@ public class DGS3630Client extends SshShellClient implements SwitchClient {
     public void getLogs(FileWriter writer) {
         try {
             String reply = commander.addMainCmd("show logging", "q").sendCmd().recvCmd();
-            String title = String.format("\u001b[32m\u001b[1m\u001b[1m\n%s -- %s\n\u001b[0m", ip, model);
+            String title = String.format(ANSI_GREEN + ANSI_BOLD + "\n%s -- %s\n" + ANSI_RESET, ip, model);
             if (writer == null) {
                 log.info(title);
                 log.info(reply);

@@ -13,6 +13,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
+import static nctu.winlab.sshrest.SSHConstants.ANSI_BOLD;
+import static nctu.winlab.sshrest.SSHConstants.ANSI_RED;
+import static nctu.winlab.sshrest.SSHConstants.ANSI_RESET;
+
 public class SshShellClient extends SshClient {
     private PrintWriter writer;
     protected final Commander commander = new Commander();
@@ -37,7 +41,7 @@ public class SshShellClient extends SshClient {
             }
         }
         catch (Exception e) {
-            System.err.printf("\u001b[31m\u001b[1m\nFailed to connect to %s:%s\n\u001b[0m", ip, port);
+            System.err.printf(ANSI_RED + ANSI_BOLD + "\nFailed to connect to %s:%s\n" + ANSI_RESET, ip, port);
             throw e;
         }
     }

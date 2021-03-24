@@ -29,6 +29,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import static nctu.winlab.sshrest.SSHConstants.ANSI_BOLD;
+import static nctu.winlab.sshrest.SSHConstants.ANSI_GREEN;
+import static nctu.winlab.sshrest.SSHConstants.ANSI_RESET;
+
 /**
  * SSH client CLI
  */
@@ -181,11 +185,8 @@ public class SSHClientCommand extends AbstractShellCommand {
                 System.out.println("  sshctl [OPTIONS] vxlan set { loopback | vtep | vlan }");
                 return;
             }
-            if (contents[1].equals("loopback")) {
-                System.out.println("loopbackId: " + loopbackId);
-                System.out.println("target: " + target);
+            if (contents[1].equals("loopback"))
                 output(service.setVxlanSourceInterfaceLoopback(target, loopbackId));
-            }
             else if (contents[1].equals("vtep"))
                 output(service.setVxlanVtep(target, vnid, vtepIP, mac));
             else if (contents[1].equals("vlan"))
@@ -204,7 +205,7 @@ public class SSHClientCommand extends AbstractShellCommand {
     }
 
     private void printDeviceArray(ArrayNode devices) {
-        int INTERVAL = 2;
+        int INTERVAL = 4;
         int[] width = service.getWidth();
         String fmt = "";
 
@@ -233,8 +234,9 @@ public class SSHClientCommand extends AbstractShellCommand {
             ArrayNode devices = (ArrayNode) res.get("devices");
             for (JsonNode device : devices) {
                 if (device instanceof ObjectNode) {
-                    System.out.printf("\n[%s]\n", device.get("name").asText());
-                    System.out.printf("%s\n", device.get("raw").asText());
+                    String raw = device.get("raw").asText("").trim();
+                    System.out.printf(ANSI_GREEN + ANSI_BOLD + "[%s]\n" + ANSI_RESET, device.get("name").asText());
+                    System.out.printf("%s\n", raw.equals("") ? "success" : raw);
                 }
             }
         }

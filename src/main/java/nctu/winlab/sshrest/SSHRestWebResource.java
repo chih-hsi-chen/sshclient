@@ -13,6 +13,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.onosproject.rest.AbstractWebResource;
@@ -296,14 +298,20 @@ public class SSHRestWebResource extends AbstractWebResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path(value = "vxlan/{switchName}")
     public Response setVxlanStatus(@PathParam(value = "switchName") String switchName,
-                                   @QueryParam(value = "status") boolean status,
                                    InputStream stream) {
         SshClientService clientService = get(SshClientService.class);
         ObjectNode root;
 
-        System.out.println("vxlan switch");
+        try {
+            ObjectNode jsonTree = readTreeFromStream(mapper(), stream);
+            JsonNode flag = jsonTree.path("status");
 
-        root = clientService.setVxlanStatus(switchName, status);
+            if (flag.isMissingNode())
+                throw new IllegalArgumentException("Please specify status of VXLAN functionality");
+            root = clientService.setVxlanStatus(switchName, flag.asBoolean());
+        } catch (IOException ex) {
+            throw new IllegalArgumentException(ex);
+        }
 
         return Response.ok(root).build();
     }

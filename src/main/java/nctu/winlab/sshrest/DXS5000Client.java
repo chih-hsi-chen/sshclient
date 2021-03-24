@@ -10,6 +10,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static nctu.winlab.sshrest.SSHConstants.ANSI_BOLD;
+import static nctu.winlab.sshrest.SSHConstants.ANSI_GREEN;
+import static nctu.winlab.sshrest.SSHConstants.ANSI_RESET;
+
 public class DXS5000Client extends SshShellClient implements SwitchClient, VxlanSwitch {
     private static Logger log = Logger.getLogger(DXS5000Client.class.getName());
 
@@ -26,8 +30,6 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
         try {
             String[] reply = commander.addCmd("enable").addMainCmd("show openflow configured controller", new String[0]).addCmd("exit").sendCmd().recvCmd().split("[\r\n]+");
             String[] controllers = Arrays.copyOfRange(reply, 3, reply.length);
-
-            rawoutput += String.format("\u001b[32m\u001b[1m\n%s -- %s\n\u001b[0m", ip, model);
             rawoutput += String.format("%-17s%-7s%-6s%s\n", "IP", "Port", "Mode", "Role");
             for (String controller : controllers) {
                 String[] infos = (String[])Stream.of(controller.split("[ \t]+")).filter(i -> !i.isEmpty()).toArray(x$0 -> new String[x$0]);
@@ -121,7 +123,7 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
     public void getLogs(FileWriter writer) {
         try {
             String reply = commander.addCmd("enable").addMainCmd("show logging buffered", "q").addCmd("exit").sendCmd().recvCmd();
-            String title = String.format("\u001b[32m\u001b[1m\n%s -- %s\n\u001b[0m", ip, model);
+            String title = String.format(ANSI_GREEN + ANSI_BOLD + "\n%s -- %s\n" + ANSI_RESET, ip, model);
             if (writer == null) {
                 log.info(title);
                 log.info(reply);

@@ -5,6 +5,10 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 
+import static nctu.winlab.sshrest.SSHConstants.ANSI_BOLD;
+import static nctu.winlab.sshrest.SSHConstants.ANSI_RED;
+import static nctu.winlab.sshrest.SSHConstants.ANSI_RESET;
+
 public class SshExecClient extends SshClient {
     public SshExecClient(String ip, String port, String username, String password) {
         super(ip, port, username, password);
@@ -20,7 +24,7 @@ public class SshExecClient extends SshClient {
             }
         }
         catch (Exception e) {
-            System.err.printf("\u001b[31m\u001b[1m\nFailed to connect to %s:%s\n\u001b[0m", ip, port);
+            System.err.printf(ANSI_RED + ANSI_BOLD + "\nFailed to connect to %s:%s\n" + ANSI_RESET, ip, port);
             throw e;
         }
     }
