@@ -13,10 +13,9 @@ public class Dir835Client extends SshExecClient implements ApClient {
     @Override
     public void setSsid(String ifname, String ssid) {
         try {
-            sendCmd("uci set wireless." + ifname + ".ssid=" + ssid);
-            sendCmd("uci commit wireless");
-            sendCmd("wifi");
-            log.info(recvCmd());
+            log.info(sendCmd("uci set wireless." + ifname + ".ssid=" + ssid));
+            log.info(sendCmd("uci commit wireless"));
+            log.info(sendCmd("wifi"));
         }
         catch (Exception e) {
             return;

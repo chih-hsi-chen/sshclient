@@ -14,8 +14,7 @@ public class DefaultServerClient extends SshExecClient implements ServerClient {
     public ObjectNode execCommand(String cmd) {
         ObjectNode res = mapper.createObjectNode();
         try {
-            sendCmd(cmd);
-            res.put("raw", recvCmd());
+            res.put("raw", sendCmd(cmd));
         }
         catch (Exception e) {
             res.put("error", true);
@@ -28,10 +27,7 @@ public class DefaultServerClient extends SshExecClient implements ServerClient {
     public ObjectNode execSudoCommand(String cmd) {
         ObjectNode res = mapper.createObjectNode();
         try {
-            sendSudoCmd(cmd, password);
-            String reply = recvCmd();
-            System.out.printf("reply: %s\n", reply);
-            res.put("raw", reply);
+            res.put("raw", sendSudoCmd(cmd, password));
         }
         catch (Exception e) {
             res.put("error", true);

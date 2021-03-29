@@ -2,6 +2,8 @@ package nctu.winlab.sshrest;
 
 import com.jcraft.jsch.ChannelExec;
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 
@@ -29,48 +31,79 @@ public class SshExecClient extends SshClient {
         }
     }
 
-    public void sendCmd(String cmd) throws Exception {
+    public String sendCmd(String cmd) throws Exception {
+        String ret = "";
         try {
             connectToServer();
             channel = session.openChannel("exec");
-            reader = new BufferedReader(new InputStreamReader(channel.getInputStream()));
             ((ChannelExec)channel).setCommand(cmd);
+            
+            InputStream in = channel.getInputStream();
+            // reader = new BufferedReader(new InputStreamReader(channel.getInputStream()));
             channel.connect();
-        }
-        catch (Exception e) {
-            System.err.printf("Failed to open exec channel to %s:%s", ip, port);
-            throw e;
-        }
-    }
-    
-    public void sendSudoCmd(String cmd, String passwd) throws Exception {
-        try {
-            connectToServer();
-            channel = session.openChannel("exec");
-            reader = new BufferedReader(new InputStreamReader(channel.getInputStream()));
-            OutputStream out = channel.getOutputStream();
-            ((ChannelExec)channel).setCommand("sudo -S -p '' " + cmd);
-            channel.connect();
-            out.write((passwd + "\n").getBytes());
-            out.flush();
+
+            ret = recvOutput(in);
         }
         catch (Exception out) {
-            // empty catch block
+            ret = out.getMessage();
         }
+        return ret;
+    }
+    
+    public String sendSudoCmd(String cmd, String passwd) throws Exception {
+        String ret = "";
+        try {
+            connectToServer();
+            channel = session.openChannel("exec");
+            ((ChannelExec)channel).setCommand("echo " + passwd + " | sudo -S " + cmd);
+            
+            InputStream in = channel.getInputStream();
+            // reader = new BufferedReader(new InputStreamReader(channel.getInputStream()));
+            channel.connect();
+
+            ret = recvOutput(in);
+        }
+        catch (Exception out) {
+            ret = out.getMessage();
+        }
+        return ret;
     }
 
-    public String recvCmd() {
-        char[] buf = new char[1024];
-        String reply = "";
-        try {
-            int nbytes;
-            while ((nbytes = reader.read(buf, 0, 1024)) > -1) {
-                reply = reply + String.valueOf(buf, 0, nbytes);
+    // public String recvCmd() {
+    //     char[] buf = new char[1024];
+    //     String reply = "";
+    //     try {
+    //         int nbytes;
+    //         while ((nbytes = reader.read(buf, 0, 1024)) > -1) {
+    //             reply = reply + String.valueOf(buf, 0, nbytes);
+    //         }
+    //     }
+    //     catch (Exception e) {
+    //         e.printStackTrace();
+    //     }
+    //     return reply;
+    // }
+
+    private String recvOutput(InputStream in) throws IOException {
+        byte[] buffer = new byte[1024];
+        StringBuilder strBuilder = new StringBuilder();
+
+        while (true){
+            while (in.available() > 0) {
+                int i = in.read(buffer, 0, 1024);
+                if (i < 0)
+                    break;
+                strBuilder.append(new String(buffer, 0, i));
+            }
+
+            if(channel.isClosed())
+                break;
+            try {
+                Thread.sleep(100);
+            } catch (Exception ex){
+                // empty exception block
             }
         }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        return reply;
+        return strBuilder.toString();
     }
 }
