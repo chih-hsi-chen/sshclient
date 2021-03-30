@@ -1,7 +1,6 @@
 package nctu.winlab.sshrest;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import static nctu.winlab.sshrest.SSHConstants.mapper;
 
 public class DefaultServerClient extends SshExecClient implements ServerClient {
 
@@ -12,7 +11,7 @@ public class DefaultServerClient extends SshExecClient implements ServerClient {
 
     @Override
     public ObjectNode execCommand(String cmd) {
-        ObjectNode res = mapper.createObjectNode();
+        ObjectNode res = mapper().createObjectNode();
         try {
             res.put("raw", sendCmd(cmd));
         }
@@ -25,7 +24,7 @@ public class DefaultServerClient extends SshExecClient implements ServerClient {
 
     @Override
     public ObjectNode execSudoCommand(String cmd) {
-        ObjectNode res = mapper.createObjectNode();
+        ObjectNode res = mapper().createObjectNode();
         try {
             res.put("raw", sendSudoCmd(cmd, password));
         }

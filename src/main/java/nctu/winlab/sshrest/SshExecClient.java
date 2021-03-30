@@ -1,11 +1,8 @@
 package nctu.winlab.sshrest;
 
 import com.jcraft.jsch.ChannelExec;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 
 import static nctu.winlab.sshrest.SSHConstants.ANSI_BOLD;
 import static nctu.winlab.sshrest.SSHConstants.ANSI_RED;
@@ -39,10 +36,11 @@ public class SshExecClient extends SshClient {
             ((ChannelExec)channel).setCommand(cmd);
             
             InputStream in = channel.getInputStream();
+            InputStream err = channel.getExtInputStream();
             // reader = new BufferedReader(new InputStreamReader(channel.getInputStream()));
             channel.connect();
 
-            ret = recvOutput(in);
+            ret = recvOutput(in, err);
         }
         catch (Exception out) {
             ret = out.getMessage();
@@ -58,10 +56,11 @@ public class SshExecClient extends SshClient {
             ((ChannelExec)channel).setCommand("echo " + passwd + " | sudo -S " + cmd);
             
             InputStream in = channel.getInputStream();
+            InputStream err = channel.getExtInputStream();
             // reader = new BufferedReader(new InputStreamReader(channel.getInputStream()));
             channel.connect();
 
-            ret = recvOutput(in);
+            ret = recvOutput(in, err);
         }
         catch (Exception out) {
             ret = out.getMessage();
@@ -84,26 +83,36 @@ public class SshExecClient extends SshClient {
     //     return reply;
     // }
 
-    private String recvOutput(InputStream in) throws IOException {
+    private String recvOutput(InputStream in, InputStream err) throws IOException {
         byte[] buffer = new byte[1024];
+        byte[] err_buffer = new byte[1024];
         StringBuilder strBuilder = new StringBuilder();
+        StringBuilder errStrBuilder = new StringBuilder();
 
         while (true){
             while (in.available() > 0) {
                 int i = in.read(buffer, 0, 1024);
-                if (i < 0)
+                if (i < 0) {
                     break;
+                }
                 strBuilder.append(new String(buffer, 0, i));
             }
-
-            if(channel.isClosed())
-                break;
-            try {
-                Thread.sleep(100);
-            } catch (Exception ex){
-                // empty exception block
+            while (err.available() > 0) {
+                int i = err.read(err_buffer, 0, 1024);
+                if (i < 0) break;
+                errStrBuilder.append(new String(err_buffer, 0, i));
             }
+            if (channel.isClosed()){
+                break;
+            }
+            try {
+                Thread.sleep(10);
+            } catch (Exception ee){}
         }
-        return strBuilder.toString();
+        
+        String err_out = errStrBuilder.toString().replace("[sudo] password for cch: ", "").trim();
+        String std_out = strBuilder.toString().trim();
+
+        return err_out.equals("") ? std_out : err_out;
     }
 }

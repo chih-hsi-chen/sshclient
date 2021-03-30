@@ -1,7 +1,6 @@
 package nctu.winlab.sshrest;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableSet;
@@ -26,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_ADDED;
 import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_UPDATED;
 import static org.onosproject.net.config.basics.SubjectFactories.APP_SUBJECT_FACTORY;
+import static nctu.winlab.sshrest.SSHConstants.mapper;
 
 /**
  * Implementation of SSH client service
@@ -42,8 +42,7 @@ public class SshClientManager implements SshClientService {
             }
         }
     );
-
-    private ObjectMapper mapper = new ObjectMapper();
+    
     private HashMap<String, SshClient> clients;
     private HashMap<Integer, String> idToname;
     private int[] width;
@@ -72,17 +71,30 @@ public class SshClientManager implements SshClientService {
     @Override
     public ArrayNode getDevices() {
         ArrayNode node = mapper.createArrayNode();
-        int index = 0;
-        for (String name : clients.keySet()) {
-            SshClient client = clients.get(name);
+        // int index = 0;
+        // for (String name : clients.keySet()) {
+        //     SshClient client = clients.get(name);
+        //     ObjectNode device = mapper.createObjectNode();
+        //     device.put("index", index++);
+        //     device.put("name", name);
+        //     device.put("ip", client.ip);
+        //     device.put("port", client.port);
+        //     device.put("username", client.username);
+        //     device.put("model", client.model);
+        //     node.add((JsonNode) device);
+        // }
+        for (Integer id : idToname.keySet()) {
+            String cname = idToname.get(id);
+            SshClient client = clients.get(cname);
             ObjectNode device = mapper.createObjectNode();
-            device.put("index", index++);
-            device.put("name", name);
+            device.put("index", id);
+            device.put("name", cname);
             device.put("ip", client.ip);
             device.put("port", client.port);
             device.put("username", client.username);
             device.put("model", client.model);
             node.add((JsonNode) device);
+
         }
         return node;
     }
@@ -232,7 +244,8 @@ public class SshClientManager implements SshClientService {
         } else if (isServerClient(client = clients.get(deviceName))) {
             addDeviceReply(deviceName, ((ServerClient) client).execCommand(cmd), devices);
         } else {
-            log.info("Remote machine should be server");
+            reply.put("error", true);
+            reply.put("msg", "Remote machine should be server");
         }
         return reply;
     }
@@ -252,7 +265,8 @@ public class SshClientManager implements SshClientService {
         } else if (isServerClient(client = clients.get(deviceName))) {
             addDeviceReply(deviceName, ((ServerClient) client).execSudoCommand(cmd), devices);
         } else {
-            log.info("Remote machine should be server");
+            reply.put("error", true);
+            reply.put("msg", "Remote machine should be server");
         }
         return reply;
     }

@@ -82,7 +82,7 @@ public class SSHClientCommand extends AbstractShellCommand {
     private String targetId = null;
 
     @Option(name = "-n", aliases = "--name",
-            description = "Indicate (by index) machine to be operated on.",
+            description = "Indicate (by name) machine to be operated on.",
             required = false, multiValued = false)
     private String targetName = null;
 
