@@ -71,18 +71,6 @@ public class SshClientManager implements SshClientService {
     @Override
     public ArrayNode getDevices() {
         ArrayNode node = mapper.createArrayNode();
-        // int index = 0;
-        // for (String name : clients.keySet()) {
-        //     SshClient client = clients.get(name);
-        //     ObjectNode device = mapper.createObjectNode();
-        //     device.put("index", index++);
-        //     device.put("name", name);
-        //     device.put("ip", client.ip);
-        //     device.put("port", client.port);
-        //     device.put("username", client.username);
-        //     device.put("model", client.model);
-        //     node.add((JsonNode) device);
-        // }
         for (Integer id : idToname.keySet()) {
             String cname = idToname.get(id);
             SshClient client = clients.get(cname);
@@ -94,7 +82,6 @@ public class SshClientManager implements SshClientService {
             device.put("username", client.username);
             device.put("model", client.model);
             node.add((JsonNode) device);
-
         }
         return node;
     }

@@ -11,7 +11,7 @@ public class DefaultServerClient extends SshExecClient implements ServerClient {
 
     @Override
     public ObjectNode execCommand(String cmd) {
-        ObjectNode res = mapper().createObjectNode();
+        ObjectNode res = createGeneralReply();
         try {
             res.put("raw", sendCmd(cmd));
         }
@@ -24,7 +24,7 @@ public class DefaultServerClient extends SshExecClient implements ServerClient {
 
     @Override
     public ObjectNode execSudoCommand(String cmd) {
-        ObjectNode res = mapper().createObjectNode();
+        ObjectNode res = createGeneralReply();
         try {
             res.put("raw", sendSudoCmd(cmd, password));
         }

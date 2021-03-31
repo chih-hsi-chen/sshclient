@@ -135,6 +135,7 @@ public class SSHRestWebResource extends AbstractWebResource {
     public Response execCommand(@PathParam(value="serverName") String serverName, 
                                     InputStream stream) {
         SshClientService clientService = get(SshClientService.class);
+        ObjectNode root;
 
         try {
             ObjectNode jsonTree = readTreeFromStream(mapper(), stream);
@@ -142,11 +143,11 @@ public class SSHRestWebResource extends AbstractWebResource {
 
             if (cmd == "")
                 throw new IllegalArgumentException("Please specify your command");
-            clientService.execCommand(serverName, cmd);
+            root = clientService.execCommand(serverName, cmd);
         } catch (IOException ex) {
             throw new IllegalArgumentException(ex);
         }
-        return Response.ok().build();
+        return Response.ok(root).build();
     }
 
     /**
@@ -163,6 +164,7 @@ public class SSHRestWebResource extends AbstractWebResource {
     public Response execSudoCommand(@PathParam(value="serverName") String serverName, 
                                     InputStream stream) {
         SshClientService clientService = get(SshClientService.class);
+        ObjectNode root;
 
         try {
             ObjectNode jsonTree = readTreeFromStream(mapper(), stream);
@@ -170,11 +172,11 @@ public class SSHRestWebResource extends AbstractWebResource {
 
             if (cmd == "")
                 throw new IllegalArgumentException("Please specify your command");
-            clientService.execSudoCommand(serverName, cmd);
+            root = clientService.execSudoCommand(serverName, cmd);
         } catch (IOException ex) {
             throw new IllegalArgumentException(ex);
         }
-        return Response.ok().build();
+        return Response.ok(root).build();
     }
 
     /**
