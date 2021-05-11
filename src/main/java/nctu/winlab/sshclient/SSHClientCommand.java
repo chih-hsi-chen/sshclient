@@ -75,7 +75,7 @@ public class SSHClientCommand extends AbstractShellCommand {
             required = false, multiValued = false)
     private String mac = null;
 
-    @Option(name = "-i", aliases = "--idex",
+    @Option(name = "-i", aliases = "--index",
             description = "Indicate (by index) machine to be operated on.",
             required = false, multiValued = false)
     private String targetId = null;
