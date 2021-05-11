@@ -18,7 +18,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>nctu.winlab</groupId>
-    <artifactId>sshrest</artifactId>
+    <artifactId>sshclient</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>bundle</packaging>
 
@@ -28,7 +28,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <onos.version>2.2.0</onos.version>
-        <onos.app.name>nctu.winlab.sshrest</onos.app.name>
+        <onos.app.name>nctu.winlab.sshclient</onos.app.name>
         <onos.app.title>App for SSH Client API</onos.app.title>
         <onos.app.origin>WINLAB, NCTU</onos.app.origin>
         <onos.app.category>default</onos.app.category>
@@ -41,7 +41,7 @@
         <api.description>
             APIs for interacting with the SSH Client.
         </api.description>
-        <api.package>nctu.winlab.sshrest</api.package>
+        <api.package>nctu.winlab.sshclient</api.package>
     </properties>
 
     <dependencies>
@@ -163,7 +163,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Karaf-Commands>nctu.winlab.sshrest</Karaf-Commands>
+                        <Karaf-Commands>nctu.winlab.sshclient</Karaf-Commands>
                         <_wab>src/main/webapp/</_wab>
                         <Include-Resource>
                             WEB-INF/classes/apidoc/swagger.json=target/swagger.json,
@@ -240,7 +240,7 @@
                         </goals>
                         <configuration>
                             <!-- switch on dependency-driven aggregation -->
-                            <sourcepath>src/main/java/sshrest</sourcepath>
+                            <sourcepath>src/main/java/sshclient</sourcepath>
                             <includeDependencySources>true</includeDependencySources>
                         </configuration>
                     </execution>

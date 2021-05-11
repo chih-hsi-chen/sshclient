@@ -1,18 +1,19 @@
-package nctu.winlab.sshrest;
+package nctu.winlab.sshclient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import static nctu.winlab.sshclient.SSHConstants.ANSI_BOLD;
+import static nctu.winlab.sshclient.SSHConstants.ANSI_GREEN;
+import static nctu.winlab.sshclient.SSHConstants.ANSI_RESET;
+
 import java.io.FileWriter;
 import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
-import static nctu.winlab.sshrest.SSHConstants.ANSI_BOLD;
-import static nctu.winlab.sshrest.SSHConstants.ANSI_GREEN;
-import static nctu.winlab.sshrest.SSHConstants.ANSI_RESET;
 
 public class DXS5000Client extends SshShellClient implements SwitchClient, VxlanSwitch {
     private static Logger log = Logger.getLogger(DXS5000Client.class.getName());

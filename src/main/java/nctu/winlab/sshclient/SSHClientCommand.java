@@ -1,4 +1,4 @@
-package nctu.winlab.sshrest;
+package nctu.winlab.sshclient;
 /*
  * Copyright 2019-present Open Networking Foundation
  *
@@ -21,17 +21,16 @@ import org.apache.karaf.shell.api.action.Option;
 import org.apache.karaf.shell.api.action.lifecycle.Service;
 import org.onosproject.cli.AbstractShellCommand;
 
-import static nctu.winlab.sshrest.SshClientService.ALL_CLIENTS_OPERATION_INDEX;
+import static nctu.winlab.sshclient.SSHConstants.ANSI_BOLD;
+import static nctu.winlab.sshclient.SSHConstants.ANSI_GREEN;
+import static nctu.winlab.sshclient.SSHConstants.ANSI_RESET;
+import static nctu.winlab.sshclient.SshClientService.ALL_CLIENTS_OPERATION_INDEX;
 
 import java.util.Arrays;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import static nctu.winlab.sshrest.SSHConstants.ANSI_BOLD;
-import static nctu.winlab.sshrest.SSHConstants.ANSI_GREEN;
-import static nctu.winlab.sshrest.SSHConstants.ANSI_RESET;
 
 /**
  * SSH client CLI
@@ -61,7 +60,7 @@ public class SSHClientCommand extends AbstractShellCommand {
             required = false, multiValued = false)
     private String loopbackId = null;
 
-    @Option(name = "--vnid",
+    @Option(name = "--vni",
             description = "VNID",
             required = false, multiValued = false)
     private String vnid = null;

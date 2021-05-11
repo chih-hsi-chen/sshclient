@@ -1,4 +1,4 @@
-package nctu.winlab.sshrest;
+package nctu.winlab.sshclient;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.FileWriter;

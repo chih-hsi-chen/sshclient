@@ -1,19 +1,20 @@
-package nctu.winlab.sshrest;
+package nctu.winlab.sshclient;
 
 import com.jcraft.jsch.ChannelExec;
+
+import static nctu.winlab.sshclient.SSHConstants.ANSI_BOLD;
+import static nctu.winlab.sshclient.SSHConstants.ANSI_RED;
+import static nctu.winlab.sshclient.SSHConstants.ANSI_RESET;
+
 import java.io.IOException;
 import java.io.InputStream;
-
-import static nctu.winlab.sshrest.SSHConstants.ANSI_BOLD;
-import static nctu.winlab.sshrest.SSHConstants.ANSI_RED;
-import static nctu.winlab.sshrest.SSHConstants.ANSI_RESET;
 
 public class SshExecClient extends SshClient {
     public SshExecClient(String ip, String port, String username, String password) {
         super(ip, port, username, password);
     }
 
-    public void connectToServer() throws Exception {
+    private void connectToServer() throws Exception {
         try {
             if (session == null || !session.isConnected()) {
                 session = jsch.getSession(username, ip, Integer.parseInt(port));
@@ -109,8 +110,8 @@ public class SshExecClient extends SshClient {
                 Thread.sleep(10);
             } catch (Exception ee){}
         }
-        
-        String err_out = errStrBuilder.toString().replace("[sudo] password for cch: ", "").trim();
+        String prompt = String.format("[sudo] password for %s: ", username);
+        String err_out = errStrBuilder.toString().replace(prompt, "").trim();
         String std_out = strBuilder.toString().trim();
 
         return err_out.equals("") ? std_out : err_out;

@@ -6,16 +6,16 @@
  *  com.jcraft.jsch.JSch
  *  com.jcraft.jsch.Session
  */
-package nctu.winlab.sshrest;
+package nctu.winlab.sshclient;
+
+import static nctu.winlab.sshclient.SSHConstants.ANSI_BOLD;
+import static nctu.winlab.sshclient.SSHConstants.ANSI_RED;
+import static nctu.winlab.sshclient.SSHConstants.ANSI_RESET;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-
-import static nctu.winlab.sshrest.SSHConstants.ANSI_BOLD;
-import static nctu.winlab.sshrest.SSHConstants.ANSI_RED;
-import static nctu.winlab.sshrest.SSHConstants.ANSI_RESET;
 
 public class SshShellClient extends SshClient {
     private PrintWriter writer;
@@ -25,7 +25,7 @@ public class SshShellClient extends SshClient {
         super(ip, port, username, password);
     }
 
-    public void connectToServer() throws Exception {
+    private void connectToServer() throws Exception {
         try {
             if (session == null || !session.isConnected()) {
                 session = jsch.getSession(username, ip, Integer.parseInt(port));

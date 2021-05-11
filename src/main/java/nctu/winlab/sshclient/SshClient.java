@@ -1,13 +1,14 @@
-package nctu.winlab.sshrest;
+package nctu.winlab.sshclient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
-import java.io.BufferedReader;
 
-import static nctu.winlab.sshrest.SSHConstants.mapper;
+import static nctu.winlab.sshclient.SSHConstants.mapper;
+
+import java.io.BufferedReader;
 
 public abstract class SshClient {
     public String ip;

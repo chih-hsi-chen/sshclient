@@ -14,10 +14,10 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<app name="nctu.winlab.sshrest" origin="WINLAB, NCTU." version="1.0-SNAPSHOT"
+<app name="nctu.winlab.sshclient" origin="WINLAB, NCTU." version="1.0-SNAPSHOT"
      category="Access Control" url="http://onosproject.org" title="App for SSH Client API"
-     featuresRepo="mvn:nctu.winlab/sshrest/1.0-SNAPSHOT/xml/features"
-     features="sshrest" apps="">
+     featuresRepo="mvn:nctu.winlab/sshclient/1.0-SNAPSHOT/xml/features"
+     features="sshclient" apps="">
     <description>ONOS OSGi bundle archetype.</description>
     <artifact>mvn:${project.groupId}/${project.artifactId}/${project.version}</artifact>
     <artifact>mvn:com.jcraft/jsch/0.1.55</artifact>

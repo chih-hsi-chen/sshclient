@@ -1,4 +1,4 @@
-package nctu.winlab.sshrest;
+package nctu.winlab.sshclient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -22,10 +22,10 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static nctu.winlab.sshclient.SSHConstants.mapper;
 import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_ADDED;
 import static org.onosproject.net.config.NetworkConfigEvent.Type.CONFIG_UPDATED;
 import static org.onosproject.net.config.basics.SubjectFactories.APP_SUBJECT_FACTORY;
-import static nctu.winlab.sshrest.SSHConstants.mapper;
 
 /**
  * Implementation of SSH client service
@@ -55,7 +55,7 @@ public class SshClientManager implements SshClientService {
 
     @Activate
     protected void activate() {
-        appId = coreService.registerApplication("nctu.winlab.sshrest");
+        appId = coreService.registerApplication("nctu.winlab.sshclient");
         cfgService.addListener(cfgListener);
         factories.forEach((cfgService)::registerConfigFactory);
         log.info("Started");

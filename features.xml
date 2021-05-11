@@ -14,8 +14,8 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<features xmlns="http://karaf.apache.org/xmlns/features/v1.2.0" name="sshrest-1.0-SNAPSHOT">
-    <feature name="sshrest" version="1.0-SNAPSHOT"
+<features xmlns="http://karaf.apache.org/xmlns/features/v1.2.0" name="sshclient-1.0-SNAPSHOT">
+    <feature name="sshclient" version="1.0-SNAPSHOT"
              description="ONOS OSGi bundle archetype.">
         <feature>onos-api</feature>
 	      <bundle>wrap:mvn:com.jcraft/jsch/0.1.55$Bundle-SymbolicName=jsch&amp;Bundle-Version=0.1.55</bundle>
