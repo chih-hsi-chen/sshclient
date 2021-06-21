@@ -1,4 +1,4 @@
-package nctu.winlab.sshclient;
+package nctu.winlab.sshclient.rest;
 
 import java.util.Set;
 import org.onlab.rest.AbstractWebApplication;

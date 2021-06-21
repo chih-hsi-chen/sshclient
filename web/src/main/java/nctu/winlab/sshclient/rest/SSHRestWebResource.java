@@ -1,4 +1,4 @@
-package nctu.winlab.sshclient;
+package nctu.winlab.sshclient.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +18,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.onosproject.rest.AbstractWebResource;
+
+import nctu.winlab.sshclient.SshClientService;
+
 import static org.onlab.util.Tools.readTreeFromStream;
 
 @Path(value="devices")

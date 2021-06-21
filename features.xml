@@ -18,7 +18,8 @@
     <feature name="sshclient" version="1.0-SNAPSHOT"
              description="ONOS OSGi bundle archetype.">
         <feature>onos-api</feature>
-	      <bundle>wrap:mvn:com.jcraft/jsch/0.1.55$Bundle-SymbolicName=jsch&amp;Bundle-Version=0.1.55</bundle>
-        <bundle>mvn:${project.groupId}/${project.artifactId}/${project.version}</bundle>
+        <bundle>wrap:mvn:com.jcraft/jsch/0.1.55$Bundle-SymbolicName=jsch&amp;Bundle-Version=0.1.55</bundle>
+        <bundle>mvn:nctu.winlab/sshclient-core/1.0-SNAPSHOT</bundle>
+        <bundle>mvn:nctu.winlab/sshclient-rest/1.0-SNAPSHOT</bundle>
     </feature>
 </features>
