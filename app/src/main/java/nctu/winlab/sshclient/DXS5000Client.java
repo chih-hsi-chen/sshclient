@@ -196,10 +196,104 @@ public class DXS5000Client extends SshShellClient implements SwitchClient, Vxlan
     }
 
     @Override
+    public ObjectNode setVxlanTenantSystemLocal(String vni, String mac, String port, boolean add) {
+        ObjectNode res = createGeneralReply();
+        try {
+            String isopen = add ? "" : "no ";
+            String reply = commander.addCmd("enable", "configure").addCmd("interface " + port).addMainCmd(isopen + "vxlan " + vni + " tenant-system " + mac).addCmd("exit", "exit", "exit").sendCmd().recvCmd();
+            res.put("raw", reply);
+        }
+        catch (Exception e) {
+            res.put("error", true);
+            res.put("msg", e.getMessage());
+        }
+        return res;
+    }
+
+    @Override
+    public ObjectNode setVxlanTenantSystemRemote(String vni, String mac, String remoteIp, boolean add) {
+        ObjectNode res = createGeneralReply();
+        try {
+            String isopen = add ? "" : "no ";
+            String reply = commander.addCmd("enable", "configure").addMainCmd(isopen + "vxlan " + vni + " vtep " + remoteIp + " tenant-system " + mac).addCmd("exit", "exit").sendCmd().recvCmd();
+            res.put("raw", reply);
+        }
+        catch (Exception e) {
+            res.put("error", true);
+            res.put("msg", e.getMessage());
+        }
+        return res;
+    }
+
+    @Override
+    public ObjectNode showVxlanTenantSystemLocal() {
+        ObjectNode res = createGeneralReply();
+        ArrayNode hostList = res.putArray("hosts");
+        try {
+            String[] reply = commander.addCmd("enable").addMainCmd("show vxlan tenant-systems local", new String[0]).addCmd("exit").sendCmd().recvCmd().split("[\r\n]+");
+            String[] hosts = Arrays.copyOfRange(reply, 3, reply.length);
+            for (String host : hosts) {
+                String[] infos = (String[])Stream.of(host.split("[ \t]+")).filter(i -> !i.isEmpty()).toArray(x$0 -> new String[x$0]);
+                ObjectNode c = mapper().createObjectNode();
+                c.put("vni", infos[0]);
+                c.put("mac", infos[1]);
+                c.put("port", infos[2]);
+                c.put("appIfIndex", infos[3]);
+                c.put("entryType", infos[4]);
+                hostList.add((JsonNode) c);
+            }
+        }
+        catch (Exception e) {
+            res.put("error", true);
+            res.put("msg", e.getMessage());
+        }
+        return res;
+    }
+
+    @Override
+    public ObjectNode showVxlanTenantSystemRemove() {
+        ObjectNode res = createGeneralReply();
+        ArrayNode hostList = res.putArray("hosts");
+        try {
+            String[] reply = commander.addCmd("enable").addMainCmd("show vxlan tenant-systems remote", new String[0]).addCmd("exit").sendCmd().recvCmd().split("[\r\n]+");
+            String[] hosts = Arrays.copyOfRange(reply, 3, reply.length);
+            for (String host : hosts) {
+                String[] infos = (String[])Stream.of(host.split("[ \t]+")).filter(i -> !i.isEmpty()).toArray(x$0 -> new String[x$0]);
+                ObjectNode c = mapper().createObjectNode();
+                c.put("vni", infos[0]);
+                c.put("mac", infos[1]);
+                c.put("vtep", infos[2]);
+                c.put("appIfIndex", infos[3]);
+                c.put("entryType", infos[4]);
+                hostList.add((JsonNode) c);
+            }
+        }
+        catch (Exception e) {
+            res.put("error", true);
+            res.put("msg", e.getMessage());
+        }
+        return res;
+    }
+
+    @Override
     public ObjectNode showVxlan() {
         ObjectNode res = createGeneralReply();
         try {
             String reply = commander.addCmd("enable", "configure").addMainCmd("show vxlan").addCmd("exit", "exit").sendCmd().recvCmd();
+            res.put("raw", reply);
+        }
+        catch (Exception e) {
+            res.put("error", true);
+            res.put("msg", e.getMessage());
+        }
+        return res;
+    }
+
+    @Override
+    public ObjectNode testConnection() {
+        ObjectNode res = createGeneralReply();
+        try {
+            String reply = commander.addMainCmd("enable", "configure").addCmd("exit", "exit").sendCmd().recvCmd();
             res.put("raw", reply);
         }
         catch (Exception e) {
